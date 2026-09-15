@@ -5,10 +5,18 @@
 
   const $ = id => document.getElementById(id);
   const query = new URLSearchParams(location.search);
+  const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
   const directToken = query.get('token_hash') || query.get('token');
   const directType = query.get('type');
   const supportedDirectType = directType === 'recovery' || directType === 'magiclink';
-  let resetMode = Boolean(directToken && supportedDirectType);
+  // Supabase can return recovery credentials in either the query string (OTP),
+  // a PKCE code, or the URL fragment (implicit flow). Treat all three as a
+  // recovery callback before checking ordinary administrator access.
+  const callbackType = hash.get('type') || directType;
+  const hasRecoveryCallback = callbackType === 'recovery' && Boolean(
+    directToken || query.get('code') || hash.get('access_token')
+  );
+  let resetMode = Boolean((directToken && supportedDirectType) || hasRecoveryCallback);
 
   const setStatus = (text, type = '') => {
     const n = $('loginStatus');
@@ -187,8 +195,18 @@
   }
 
   async function refresh() {
-    if (resetMode) return;
     const { data: { session } } = await client.auth.getSession();
+    if (resetMode) {
+      if (!session) {
+        setStatus('The password-reset link is invalid, expired, or has already been used. Request a new reset email.', 'error');
+        resetMode = false;
+        return;
+      }
+      // Remove the one-time credentials from the address bar before showing the form.
+      history.replaceState({}, document.title, location.pathname);
+      showResetForm();
+      return;
+    }
     if (!session) {
       $('loginView')?.classList.remove('off');
       $('dashboard')?.classList.remove('on');
