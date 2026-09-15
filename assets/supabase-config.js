@@ -1,6 +1,7 @@
 window.HASHAN_CMS = {
-  supabaseUrl: 'https://caxbhzgmwkhgdblotjvs.supabase.co',
-  supabaseKey: 'sb_publishable_p6qXdrM6TF0ZW7Z5btj5jQ_-WP-ou6N',
+  supabaseUrl: 'https://kgbxwuhyaypwjepywdpl.supabase.co',
+  supabaseKey: 'sb_publishable_NSeCmyWHpvJYDCoPrZt9Xg_NZUuvYEa',
   table: 'hashansoysa_portfolio_content',
-  rowId: 'site'
+  rowId: 'site',
+  adminEmail: 'hashansoysa92@gmail.com'
 };
