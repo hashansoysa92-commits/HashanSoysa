@@ -65,4 +65,7 @@
   } else {
     document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
   }
+
+  const loadScript = src => new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.body.appendChild(s);});
+  loadScript('assets/supabase-config.js').then(()=>loadScript('assets/cms.js')).catch(()=>{});
 })();
