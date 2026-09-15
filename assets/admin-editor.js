@@ -39,7 +39,10 @@
     const validationError=validateContent(content);if(validationError){notice(validationError,'error');return;}
     content.meta={...(content.meta||{}),schemaVersion:3,contentSource:'Supabase CMS',lastUpdated:new Date().toISOString()};
     $('saveBtn').disabled=true;notice('Saving…');
-    const {data,error}=await db.from(cfg.table).update({content,updated_at:new Date().toISOString()}).eq('id',cfg.rowId).select('id');
+    const {data,error}=await db.from(cfg.table).upsert(
+      {id:cfg.rowId,content,updated_at:new Date().toISOString()},
+      {onConflict:'id'}
+    ).select('id');
     $('saveBtn').disabled=false;
     if(error)notice(error.message,'error');else if(!data?.length)notice('No CMS row was updated. Check database permissions.','error');else notice('Saved successfully. Refresh the public site to see the changes.','ok');
   }
