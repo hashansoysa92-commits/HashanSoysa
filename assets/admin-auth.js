@@ -21,13 +21,16 @@
     window.dispatchEvent(new CustomEvent('hashan-admin-ready'));
   }
 
+  byId('sendLinkBtn').textContent='Login with Email & Password';
   byId('sendLinkBtn').onclick=async()=>{
     const email=window.prompt('Enter your registered admin email');
     if(!email) return;
-    status('Sending secure login link…');
-    const redirectTo=location.origin+location.pathname;
-    const {error}=await client.auth.signInWithOtp({email:email.trim(),options:{shouldCreateUser:false,emailRedirectTo:redirectTo}});
-    if(error) status(error.message,'error'); else status('Login link sent. Check your email inbox.','ok');
+    const password=window.prompt('Enter your admin password');
+    if(!password) return;
+    status('Signing in…');
+    const {error}=await client.auth.signInWithPassword({email:email.trim(),password});
+    if(error){ status('Login failed. Check your email and password.','error'); return; }
+    await refresh();
   };
 
   byId('logoutBtn').onclick=async()=>{await client.auth.signOut();location.reload();};
