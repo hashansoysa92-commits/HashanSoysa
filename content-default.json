@@ -1,0 +1,67 @@
+{
+  "brand": {
+    "name": "Hashan Soysa",
+    "tagline": "Creative · Digital · Technical",
+    "eyebrow": "Creative Media · Digital · Technical Services"
+  },
+  "hero": {
+    "title": "Ideas shaped with precision. Work built to perform.",
+    "lead": "Professional photography, videography, post-production, digital marketing, Meta Ads, website development, audio, live sound, camera services and practical training — brought together under one creative and technical workflow.",
+    "primaryButton": "Explore Services",
+    "secondaryButton": "Start a Project"
+  },
+  "about": {
+    "title": "One professional workflow. Multiple creative disciplines.",
+    "paragraph1": "I work across visual production, post-production, digital marketing, web development, audio and camera technology. This multidisciplinary approach makes it possible to connect creative ideas with the technical execution needed to deliver polished, practical and platform-ready results.",
+    "paragraph2": "Whether the requirement is a photograph, campaign video, social media strategy, website, live event sound setup, camera support or practical training, the focus stays the same: clear communication, strong presentation and reliable delivery."
+  },
+  "servicesIntro": {
+    "title": "Professional services, carefully connected.",
+    "text": "Six focused service areas cover the complete creative, digital and technical workflow — from capture and production to promotion, deployment and support."
+  },
+  "services": [
+    {"number":"01","title":"Photography, Videography & Camera Services","description":"Professional photography, videography and camera-related services for individuals, businesses, brands and events.","items":["Professional Photography","Portrait Photography","Corporate Photography","Product & Commercial Photography","Event Photography","Passport & ID Photography","Professional Videography","Cinematography","Corporate & Promotional Video Production","Event Videography","Interviews","Social Media Video Production","Reels, Shorts & YouTube Content","Camera Operation","Lighting Setup","Visual Storytelling","Camera Rental","Photography & Videography Equipment Rental","Camera Inspection","Camera Service","Camera Repair","Camera Maintenance","Camera Testing & Troubleshooting","Camera Setup Assistance"]},
+    {"number":"02","title":"Video Editing, Colour Grading & Graphic Design","description":"Professional post-production and creative design services for digital, social media and promotional content.","items":["Professional Video Editing","Cinematic Video Editing","Colour Correction","Colour Grading","Audio Synchronization","Social Media Video Editing","Reels & Short-Form Video Editing","YouTube Video Editing","Promotional Video Editing","Graphic Design","Social Media Post Design","Promotional Posters","Flyers & Brochures","Digital Advertising Creatives","YouTube Thumbnails","Corporate & Promotional Graphics"]},
+    {"number":"03","title":"Social Media, Digital Marketing & Meta Ads","description":"Creative and strategic digital marketing solutions focused on brand visibility, audience growth, engagement and advertising performance.","items":["Social Media Marketing","Social Media Management","Facebook Content Management","Instagram Content Management","TikTok Content Creation","YouTube Content Creation","Social Media Content Planning","Digital Marketing","Brand Promotion","Meta Ads Management","Facebook Advertising","Instagram Advertising","Meta Campaign Setup","Audience Targeting","Ad Creative Planning","Campaign Monitoring","Campaign Optimization","Promotional Campaign Content","SEO-Friendly Content Creation","Social Media SEO","YouTube SEO","Caption Writing","Video Titles & Descriptions","Hashtag Research & Optimization","Creative Content Planning"]},
+    {"number":"04","title":"Website Development & Digital Presence","description":"Modern, responsive and professional websites designed for businesses, brands and personal portfolios.","items":["Website Design & Development","Business Websites","Corporate Websites","Personal Portfolio Websites","Promotional Websites","Landing Pages","Mobile-Responsive Website Design","Website UI Design","Website Content Integration","Admin-Controlled Websites","Website Updates & Maintenance","Website Deployment","GitHub Pages Websites","Social Media Integration","Google Maps & Review Integration","Basic Website SEO","SEO-Friendly Website Structure","Website Content Management"]},
+    {"number":"05","title":"Audio, Music & Live Sound","description":"Professional audio services covering recording, post-production, music creation and live event sound.","items":["Professional Audio Recording","Location Audio Recording","Audio Editing","Audio Cleanup","Audio Mixing","Video Audio Post-Production","Live Sound Engineering","FOH Sound Mixing","Live Event Audio Operation","Mixing Console Operation","Microphone & Sound System Setup","Sound Checks","Technical Audio Support","Meditation Music Creation","Background & Ambient Music Creation","Music Production"]},
+    {"number":"06","title":"Training & Professional Consultation","description":"Practical training and technical consultation based on professional experience in photography, cameras, media and digital production.","items":["Photography Training","Camera Operation Training","Camera Usage Training","DSLR & Mirrorless Camera Training","Practical Photography Training","Videography Training","Lighting Setup Guidance","Camera Settings & Exposure Training","Camera Service & Maintenance Guidance","Photography & Videography Consultation","Camera & Equipment Consultation","Social Media & Digital Marketing Consultation","Website Consultation","Creative Media Consultation"]}
+  ],
+  "expertise": {
+    "title": "Creative thinking. Technical execution.",
+    "text": "Different projects need different combinations of skills. The advantage of a multidisciplinary service is continuity — the visual direction, technical setup, post-production, digital delivery and promotion can be planned as one connected process.",
+    "steps": [
+      {"number":"01","title":"Discover","text":"Understand the objective, audience, platform and technical requirements."},
+      {"number":"02","title":"Create","text":"Build the visual, digital or technical solution around a clear creative direction."},
+      {"number":"03","title":"Refine","text":"Polish the details through editing, grading, design, optimization and testing."},
+      {"number":"04","title":"Deliver","text":"Prepare the final output for the right platform, audience, device or environment."}
+    ]
+  },
+  "contact": {
+    "eyebrow": "Available for projects",
+    "heading": "Have an idea? Build it properly.",
+    "text": "For creative, digital, technical or training projects, start with the service you need and build the right workflow from there.",
+    "email": "",
+    "phone": "",
+    "whatsapp": "",
+    "location": "Maldives / Sri Lanka",
+    "github": "https://github.com/hashansoysa92-commits"
+  },
+  "footer": {
+    "line": "Photography · Videography · Post-Production · Digital Marketing · Web · Audio · Camera Services · Training",
+    "copyright": "Hashan Soysa"
+  },
+  "seo": {
+    "title": "Hashan Soysa | Photography, Videography, Digital Marketing, Web & Audio Services",
+    "description": "Hashan Soysa provides professional photography, videography, video editing, colour grading, graphic design, social media marketing, Meta Ads management, website development, audio, live sound, camera rental and repair, training and creative consultation services.",
+    "keywords": "Hashan Soysa, photographer, videographer, cinematographer, video editor, colour grading, graphic designer, social media marketing, digital marketing, Meta Ads management, website developer, audio recordist, live sound engineer, camera rental, camera repair, photography training, Maldives, Sri Lanka",
+    "ogImage": "https://avatars.githubusercontent.com/u/280023513?v=4"
+  },
+  "theme": {
+    "background": "#080808",
+    "surface": "#111112",
+    "text": "#f4efe7",
+    "accent": "#d6b56d"
+  },
+  "meta": {"schemaVersion":3,"contentSource":"Supabase CMS"}
+}
