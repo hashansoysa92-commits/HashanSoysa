@@ -1,5 +1,8 @@
 (() => {
   const cfg = window.HASHAN_CMS;
+  const query = new URLSearchParams(location.search);
+  const directRecoveryToken = query.get('token_hash') || query.get('token');
+  const directRecoveryType = query.get('type');
   const recoveryFromUrl = (() => {
     const hash = new URLSearchParams((location.hash || '').replace(/^#/, ''));
     return hash.get('type') === 'recovery';
@@ -8,7 +11,7 @@
   const client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
   window.hashanAdminClient = client;
   const byId = id => document.getElementById(id);
-  let recoveryMode = recoveryFromUrl;
+  let recoveryMode = recoveryFromUrl || (Boolean(directRecoveryToken) && directRecoveryType === 'recovery');
 
   const status = (text, type='') => {
     const n = byId('loginStatus');
@@ -65,20 +68,16 @@
     const card = login.querySelector('.card');
     if (!card || card.dataset.recoveryReady === '1') return;
     card.dataset.recoveryReady = '1';
-
     while (card.firstChild) card.removeChild(card.firstChild);
 
     const eyebrow = document.createElement('p');
     eyebrow.className = 'muted';
     eyebrow.textContent = 'PASSWORD RECOVERY';
-
     const title = document.createElement('h1');
     title.textContent = 'Set New Password';
-
     const intro = document.createElement('p');
     intro.className = 'muted';
     intro.textContent = 'Enter and confirm your new administrator password.';
-
     const form = document.createElement('form');
 
     const makeField = (labelText, id) => {
@@ -99,15 +98,12 @@
 
     const passwordField = makeField('New Password', 'newAdminPassword');
     const confirmField = makeField('Confirm Password', 'confirmAdminPassword');
-
     const button = document.createElement('button');
     button.type = 'submit';
     button.className = 'btn primary';
     button.textContent = 'Update Password';
-
     const recoveryStatus = document.createElement('div');
     recoveryStatus.className = 'status';
-
     form.append(passwordField, confirmField, button);
     card.append(eyebrow, title, intro, form, recoveryStatus);
 
@@ -115,7 +111,6 @@
       event.preventDefault();
       const password = byId('newAdminPassword')?.value || '';
       const confirm = byId('confirmAdminPassword')?.value || '';
-
       if (password.length < 8) {
         recoveryStatus.textContent = 'Password must be at least 8 characters.';
         recoveryStatus.className = 'status error';
@@ -130,7 +125,6 @@
       button.disabled = true;
       recoveryStatus.textContent = 'Updating password…';
       recoveryStatus.className = 'status';
-
       const { error } = await client.auth.updateUser({ password });
       if (error) {
         button.disabled = false;
@@ -180,6 +174,27 @@
     window.dispatchEvent(new CustomEvent('hashan-admin-ready'));
   }
 
+  async function verifyDirectRecovery() {
+    if (!directRecoveryToken || directRecoveryType !== 'recovery') {
+      await refresh();
+      return;
+    }
+    status('Verifying password recovery link…');
+    const { error } = await client.auth.verifyOtp({
+      token_hash: directRecoveryToken,
+      type: 'recovery'
+    });
+    if (error) {
+      recoveryMode = false;
+      status('Recovery link failed: ' + error.message + '. Request a new reset email.', 'error');
+      history.replaceState({}, document.title, location.pathname);
+      return;
+    }
+    recoveryMode = true;
+    history.replaceState({}, document.title, location.pathname);
+    await refresh();
+  }
+
   byId('loginForm')?.addEventListener('submit', async event => {
     event.preventDefault();
     const email = byId('adminEmail')?.value.trim();
@@ -194,7 +209,6 @@
     status('Signing in…');
     const { data, error } = await client.auth.signInWithPassword({ email, password });
     if (button) button.disabled = false;
-
     if (error) {
       status('Login failed: ' + error.message, 'error');
       return;
@@ -229,8 +243,8 @@
 
   client.auth.onAuthStateChange((event) => {
     if (event === 'PASSWORD_RECOVERY') recoveryMode = true;
-    setTimeout(refresh, 0);
+    if (!directRecoveryToken) setTimeout(refresh, 0);
   });
 
-  refresh();
+  verifyDirectRecovery();
 })();
