@@ -34,6 +34,21 @@
     n.className = 'status ' + type;
   };
 
+  function setPasswordStatus(text, type = '') {
+    const node = $('passwordStatus');
+    if (!node) return;
+    node.textContent = text;
+    node.className = 'status ' + type;
+  }
+
+  function closePasswordPanel() {
+    const panel = $('passwordPanel');
+    if (panel) panel.hidden = true;
+    if ($('newDashboardPassword')) $('newDashboardPassword').value = '';
+    if ($('confirmDashboardPassword')) $('confirmDashboardPassword').value = '';
+    setPasswordStatus('');
+  }
+
   function setLoginEnabled(enabled) {
     ['adminEmail', 'adminPassword', 'loginBtn', 'forgotBtn'].forEach(id => {
       const node = $(id);
@@ -298,6 +313,32 @@
     if ($('adminPassword')) $('adminPassword').value = '';
     setStatus('Authentication successful. Checking administrator access…');
     await refresh();
+  });
+
+  $('passwordBtn')?.addEventListener('click', () => {
+    const panel = $('passwordPanel');
+    if (!panel) return;
+    const isHidden = panel.hidden;
+    panel.hidden = !isHidden;
+    setPasswordStatus('');
+    if (isHidden) $('newDashboardPassword')?.focus();
+  });
+  $('passwordCancelBtn')?.addEventListener('click', closePasswordPanel);
+  $('passwordForm')?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const password = $('newDashboardPassword')?.value || '';
+    const confirm = $('confirmDashboardPassword')?.value || '';
+    if (password.length < 10) { setPasswordStatus('Use at least 10 characters for your new password.', 'error'); return; }
+    if (password !== confirm) { setPasswordStatus('The two password entries do not match.', 'error'); return; }
+    const button = $('passwordSaveBtn');
+    if (button) button.disabled = true;
+    setPasswordStatus('Updating password…');
+    const { error } = await client.auth.updateUser({ password });
+    if (button) button.disabled = false;
+    if (error) { setPasswordStatus('Password update failed: ' + error.message, 'error'); return; }
+    await client.auth.signOut();
+    setPasswordStatus('Password updated successfully. Please sign in again.', 'ok');
+    setTimeout(() => location.replace('admin.html?reset=success'), 900);
   });
 
   $('forgotBtn')?.addEventListener('click', async () => {
