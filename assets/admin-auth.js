@@ -22,39 +22,25 @@
 
   async function authorized(user) {
     if (!user) return false;
-
+    const attempts = [
+      () => client.rpc('is_admin', { uid: user.id }),
+      () => client.rpc('is_super_admin', { uid: user.id }),
+      () => client.rpc('is_admin'),
+      () => client.rpc('is_super_admin')
+    ];
+    for (const attempt of attempts) {
+      try {
+        const result = await attempt();
+        if (!result.error && result.data === true) return true;
+      } catch (_) {}
+    }
     try {
-      const a = await client.rpc('is_admin', { uid: user.id });
-      if (!a.error && a.data === true) return true;
-    } catch (_) {}
-
-    try {
-      const b = await client.rpc('is_super_admin', { uid: user.id });
-      if (!b.error && b.data === true) return true;
-    } catch (_) {}
-
-    try {
-      const c = await client.rpc('is_admin');
-      if (!c.error && c.data === true) return true;
-    } catch (_) {}
-
-    try {
-      const d = await client.rpc('is_super_admin');
-      if (!d.error && d.data === true) return true;
-    } catch (_) {}
-
-    try {
-      const { data, error } = await client
-        .from('profiles')
-        .select('role,is_active')
-        .eq('id', user.id)
-        .maybeSingle();
+      const { data, error } = await client.from('profiles').select('role,is_active').eq('id', user.id).maybeSingle();
       if (!error && data) {
         const role = String(data.role || '').toLowerCase();
         return data.is_active !== false && (role === 'admin' || role === 'super_admin');
       }
     } catch (_) {}
-
     return false;
   }
 
@@ -64,7 +50,6 @@
     if (!login) return;
     login.classList.remove('off');
     dashboard?.classList.remove('on');
-
     const card = login.querySelector('.card');
     if (!card || card.dataset.recoveryReady === '1') return;
     card.dataset.recoveryReady = '1';
@@ -96,15 +81,13 @@
       return wrap;
     };
 
-    const passwordField = makeField('New Password', 'newAdminPassword');
-    const confirmField = makeField('Confirm Password', 'confirmAdminPassword');
     const button = document.createElement('button');
     button.type = 'submit';
     button.className = 'btn primary';
     button.textContent = 'Update Password';
     const recoveryStatus = document.createElement('div');
     recoveryStatus.className = 'status';
-    form.append(passwordField, confirmField, button);
+    form.append(makeField('New Password', 'newAdminPassword'), makeField('Confirm Password', 'confirmAdminPassword'), button);
     card.append(eyebrow, title, intro, form, recoveryStatus);
 
     form.addEventListener('submit', async event => {
@@ -121,10 +104,8 @@
         recoveryStatus.className = 'status error';
         return;
       }
-
       button.disabled = true;
       recoveryStatus.textContent = 'Updating password…';
-      recoveryStatus.className = 'status';
       const { error } = await client.auth.updateUser({ password });
       if (error) {
         button.disabled = false;
@@ -132,7 +113,6 @@
         recoveryStatus.className = 'status error';
         return;
       }
-
       recoveryStatus.textContent = 'Password updated successfully. Returning to Admin Login…';
       recoveryStatus.className = 'status ok';
       recoveryMode = false;
@@ -142,9 +122,59 @@
     });
   }
 
+  async function verifyRecoveryToken(token) {
+    status('Verifying password recovery link…');
+    const { error } = await client.auth.verifyOtp({ token_hash: token, type: 'recovery' });
+    if (error) {
+      recoveryMode = false;
+      status('Recovery link failed: ' + error.message + '. Request a new reset email and copy its link without opening it.', 'error');
+      return false;
+    }
+    recoveryMode = true;
+    history.replaceState({}, document.title, location.pathname);
+    await refresh();
+    return true;
+  }
+
+  function showPasteRecoveryBox() {
+    if (byId('recoveryLinkBox')) return;
+    const card = byId('loginView')?.querySelector('.card');
+    if (!card) return;
+    const wrap = document.createElement('div');
+    wrap.id = 'recoveryLinkBox';
+    wrap.className = 'field';
+    const label = document.createElement('label');
+    label.htmlFor = 'recoveryLinkInput';
+    label.textContent = 'Paste Reset Link';
+    const input = document.createElement('input');
+    input.id = 'recoveryLinkInput';
+    input.type = 'url';
+    input.placeholder = 'Paste the Reset password link from the newest email';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn';
+    button.textContent = 'Verify Reset Link';
+    button.addEventListener('click', async () => {
+      try {
+        const raw = input.value.trim();
+        const parsed = new URL(raw);
+        const token = parsed.searchParams.get('token') || parsed.searchParams.get('token_hash');
+        const type = parsed.searchParams.get('type');
+        if (!token || type !== 'recovery') {
+          status('That is not a valid Supabase recovery link.', 'error');
+          return;
+        }
+        await verifyRecoveryToken(token);
+      } catch (_) {
+        status('Paste the full Reset password link from the email.', 'error');
+      }
+    });
+    wrap.append(label, input, button);
+    card.append(wrap);
+  }
+
   async function refresh() {
     const { data: { session } } = await client.auth.getSession();
-
     if (recoveryMode) {
       if (session) showRecoveryForm();
       else {
@@ -154,20 +184,17 @@
       }
       return;
     }
-
     if (!session) {
       byId('loginView')?.classList.remove('off');
       byId('dashboard')?.classList.remove('on');
       return;
     }
-
     if (!(await authorized(session.user))) {
       const email = session.user.email || 'this account';
       await client.auth.signOut();
       status('Authentication succeeded for ' + email + ', but this account is not authorized as an administrator.', 'error');
       return;
     }
-
     byId('loginView')?.classList.add('off');
     byId('dashboard')?.classList.add('on');
     if (byId('sessionText')) byId('sessionText').textContent = 'Signed in as ' + (session.user.email || 'Administrator');
@@ -179,20 +206,7 @@
       await refresh();
       return;
     }
-    status('Verifying password recovery link…');
-    const { error } = await client.auth.verifyOtp({
-      token_hash: directRecoveryToken,
-      type: 'recovery'
-    });
-    if (error) {
-      recoveryMode = false;
-      status('Recovery link failed: ' + error.message + '. Request a new reset email.', 'error');
-      history.replaceState({}, document.title, location.pathname);
-      return;
-    }
-    recoveryMode = true;
-    history.replaceState({}, document.title, location.pathname);
-    await refresh();
+    await verifyRecoveryToken(directRecoveryToken);
   }
 
   byId('loginForm')?.addEventListener('submit', async event => {
@@ -203,7 +217,6 @@
       status('Enter your email and password.', 'error');
       return;
     }
-
     const button = byId('loginBtn');
     if (button) button.disabled = true;
     status('Signing in…');
@@ -217,7 +230,6 @@
       status('Login failed: authenticated session was not created.', 'error');
       return;
     }
-
     if (byId('adminPassword')) byId('adminPassword').value = '';
     status('Authentication successful. Checking administrator access…');
     await refresh();
@@ -229,11 +241,15 @@
       status('Enter your admin email first.', 'error');
       return;
     }
-
     status('Sending password reset email…');
     const redirectTo = location.origin + location.pathname;
     const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
-    status(error ? 'Reset failed: ' + error.message : 'Password reset email sent. Use only the newest reset link.', error ? 'error' : 'ok');
+    if (error) {
+      status('Reset failed: ' + error.message, 'error');
+      return;
+    }
+    status('Reset email sent. Do not open its Reset password button. Copy the link address and paste it below.', 'ok');
+    showPasteRecoveryBox();
   });
 
   byId('logoutBtn')?.addEventListener('click', async () => {
