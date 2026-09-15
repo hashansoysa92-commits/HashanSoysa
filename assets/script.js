@@ -45,15 +45,17 @@
     };
     const refreshHighlights = () => {
       const selection = randomHighlights();
-      chips.forEach(chip => chip.classList.add('is-changing'));
-      window.setTimeout(() => chips.forEach((chip, index) => {
-        const current = selection[index];
-        const icon = chip.querySelector('.orbit-label-icon');
-        const text = chip.querySelector('.orbit-label-text');
-        if (icon) icon.textContent = current[0];
-        if (text) text.textContent = current[1];
-        chip.classList.remove('is-changing');
-      }), 240);
+      chips.forEach((chip, index) => window.setTimeout(() => {
+        chip.classList.add('is-changing');
+        window.setTimeout(() => {
+          const current = selection[index];
+          const icon = chip.querySelector('.orbit-label-icon');
+          const text = chip.querySelector('.orbit-label-text');
+          if (icon) icon.textContent = current[0];
+          if (text) text.textContent = current[1];
+          chip.classList.remove('is-changing');
+        }, 360);
+      }, index * 105));
       previous = selection;
     };
     refreshHighlights();
