@@ -19,9 +19,40 @@
 
   async function authorized(user) {
     if (!user) return false;
-    const a = await client.rpc('is_admin', { uid: user.id });
-    const b = await client.rpc('is_super_admin', { uid: user.id });
-    return a.data === true || b.data === true;
+
+    try {
+      const a = await client.rpc('is_admin', { uid: user.id });
+      if (!a.error && a.data === true) return true;
+    } catch (_) {}
+
+    try {
+      const b = await client.rpc('is_super_admin', { uid: user.id });
+      if (!b.error && b.data === true) return true;
+    } catch (_) {}
+
+    try {
+      const c = await client.rpc('is_admin');
+      if (!c.error && c.data === true) return true;
+    } catch (_) {}
+
+    try {
+      const d = await client.rpc('is_super_admin');
+      if (!d.error && d.data === true) return true;
+    } catch (_) {}
+
+    try {
+      const { data, error } = await client
+        .from('profiles')
+        .select('role,is_active')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (!error && data) {
+        const role = String(data.role || '').toLowerCase();
+        return data.is_active !== false && (role === 'admin' || role === 'super_admin');
+      }
+    } catch (_) {}
+
+    return false;
   }
 
   function showRecoveryForm() {
@@ -103,7 +134,7 @@
       const { error } = await client.auth.updateUser({ password });
       if (error) {
         button.disabled = false;
-        recoveryStatus.textContent = error.message;
+        recoveryStatus.textContent = 'Password update failed: ' + error.message;
         recoveryStatus.className = 'status error';
         return;
       }
@@ -121,9 +152,8 @@
     const { data: { session } } = await client.auth.getSession();
 
     if (recoveryMode) {
-      if (session) {
-        showRecoveryForm();
-      } else {
+      if (session) showRecoveryForm();
+      else {
         byId('loginView')?.classList.remove('off');
         byId('dashboard')?.classList.remove('on');
         status('Opening secure password reset session…');
@@ -134,14 +164,13 @@
     if (!session) {
       byId('loginView')?.classList.remove('off');
       byId('dashboard')?.classList.remove('on');
-      const params = new URLSearchParams(location.search);
-      if (params.get('reset') === 'success') status('Password updated. Sign in with your new password.', 'ok');
       return;
     }
 
     if (!(await authorized(session.user))) {
+      const email = session.user.email || 'this account';
       await client.auth.signOut();
-      status('This account is not authorized.', 'error');
+      status('Authentication succeeded for ' + email + ', but this account is not authorized as an administrator.', 'error');
       return;
     }
 
@@ -163,15 +192,20 @@
     const button = byId('loginBtn');
     if (button) button.disabled = true;
     status('Signing in…');
-    const { error } = await client.auth.signInWithPassword({ email, password });
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
     if (button) button.disabled = false;
 
     if (error) {
-      status('Login failed. Check your email and password.', 'error');
+      status('Login failed: ' + error.message, 'error');
+      return;
+    }
+    if (!data?.session) {
+      status('Login failed: authenticated session was not created.', 'error');
       return;
     }
 
     if (byId('adminPassword')) byId('adminPassword').value = '';
+    status('Authentication successful. Checking administrator access…');
     await refresh();
   });
 
@@ -185,7 +219,7 @@
     status('Sending password reset email…');
     const redirectTo = location.origin + location.pathname;
     const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
-    status(error ? error.message : 'Password reset email sent. Open the link in this browser and set your new password.', error ? 'error' : 'ok');
+    status(error ? 'Reset failed: ' + error.message : 'Password reset email sent. Use only the newest reset link.', error ? 'error' : 'ok');
   });
 
   byId('logoutBtn')?.addEventListener('click', async () => {
