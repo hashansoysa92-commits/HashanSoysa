@@ -33,16 +33,31 @@
       ['◉', 'Photography'], ['◇', 'Video Editing'], ['↗', 'Digital Marketing'],
       ['⌘', 'Web Development'], ['≋', 'Audio & Live Sound'], ['✦', 'Training']
     ];
-    let highlightIndex = 0;
-    const refreshHighlights = () => chips.forEach((chip, offset) => {
-      const current = highlights[(highlightIndex + offset * 2) % highlights.length];
-      const icon = chip.querySelector('.orbit-label-icon');
-      const text = chip.querySelector('.orbit-label-text');
-      if (icon) icon.textContent = current[0];
-      if (text) text.textContent = current[1];
-    });
+    let previous = [];
+    const randomHighlights = () => {
+      const pool = [...highlights];
+      const selection = [];
+      while (selection.length < chips.length && pool.length) {
+        const choice = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+        selection.push(choice);
+      }
+      return selection.some((item, index) => item[1] !== previous[index]?.[1]) ? selection : randomHighlights();
+    };
+    const refreshHighlights = () => {
+      const selection = randomHighlights();
+      chips.forEach(chip => chip.classList.add('is-changing'));
+      window.setTimeout(() => chips.forEach((chip, index) => {
+        const current = selection[index];
+        const icon = chip.querySelector('.orbit-label-icon');
+        const text = chip.querySelector('.orbit-label-text');
+        if (icon) icon.textContent = current[0];
+        if (text) text.textContent = current[1];
+        chip.classList.remove('is-changing');
+      }), 240);
+      previous = selection;
+    };
     refreshHighlights();
-    window.setInterval(() => { highlightIndex = (highlightIndex + 1) % highlights.length; refreshHighlights(); }, 3200);
+    window.setInterval(refreshHighlights, 3600);
   }
 
   if (!reducedMotion) {
