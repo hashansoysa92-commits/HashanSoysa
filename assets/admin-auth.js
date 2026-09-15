@@ -1,5 +1,13 @@
 (() => {
   const cfg = window.HASHAN_CMS;
+  if (!cfg?.supabaseUrl || !cfg?.supabaseKey || !window.supabase?.createClient) {
+    const status = document.getElementById('loginStatus');
+    if (status) {
+      status.textContent = 'Admin configuration could not be loaded. Refresh the page and try again.';
+      status.className = 'status error';
+    }
+    return;
+  }
   const client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
   window.hashanAdminClient = client;
 
@@ -17,6 +25,7 @@
     directToken || query.get('code') || hash.get('access_token')
   );
   let resetMode = Boolean((directToken && supportedDirectType) || hasRecoveryCallback);
+  let authServiceAvailable = false;
 
   const setStatus = (text, type = '') => {
     const n = $('loginStatus');
@@ -24,6 +33,35 @@
     n.textContent = text;
     n.className = 'status ' + type;
   };
+
+  function setLoginEnabled(enabled) {
+    ['adminEmail', 'adminPassword', 'loginBtn', 'forgotBtn'].forEach(id => {
+      const node = $(id);
+      if (node) node.disabled = !enabled;
+    });
+  }
+
+  async function checkAuthService() {
+    setLoginEnabled(false);
+    setStatus('Checking secure admin service…');
+    try {
+      const response = await fetch(`${cfg.supabaseUrl}/auth/v1/health`, {
+        method: 'GET',
+        headers: { apikey: cfg.supabaseKey },
+        cache: 'no-store'
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      authServiceAvailable = true;
+      setLoginEnabled(true);
+      setStatus('');
+      return true;
+    } catch (_) {
+      authServiceAvailable = false;
+      setLoginEnabled(false);
+      setStatus('Admin service is currently unavailable. Restore or reactivate the connected Supabase project, then refresh this page.', 'error');
+      return false;
+    }
+  }
 
   async function isAuthorized(user) {
     if (!user) return false;
@@ -229,6 +267,10 @@
 
   $('loginForm')?.addEventListener('submit', async event => {
     event.preventDefault();
+    if (!authServiceAvailable) {
+      setStatus('Admin service is unavailable. Refresh after the Supabase project is active.', 'error');
+      return;
+    }
     const email = $('adminEmail')?.value.trim();
     const password = $('adminPassword')?.value || '';
     if (!email || !password) {
@@ -257,6 +299,10 @@
   });
 
   $('forgotBtn')?.addEventListener('click', async () => {
+    if (!authServiceAvailable) {
+      setStatus('Admin service is unavailable. A password reset cannot be requested until the Supabase project is active.', 'error');
+      return;
+    }
     const email = $('adminEmail')?.value.trim();
     if (!email) {
       setStatus('Enter your admin email first.', 'error');
@@ -289,9 +335,9 @@
     if (!resetMode && (event === 'SIGNED_IN' || event === 'SIGNED_OUT')) setTimeout(refresh, 0);
   });
 
-  if (directToken && supportedDirectType) {
-    verifyToken(directToken, directType);
-  } else {
-    refresh();
-  }
+  checkAuthService().then(online => {
+    if (!online) return;
+    if (directToken && supportedDirectType) verifyToken(directToken, directType);
+    else refresh();
+  });
 })();
