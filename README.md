@@ -1,6 +1,10 @@
 # Hashan Soysa — Professional Services Website
 
-Luxury, responsive portfolio and services website for Hashan Soysa.
+Official luxury professional services portfolio for Hashan Soysa, built and hosted entirely with GitHub + GitHub Pages.
+
+## Live website
+
+https://hashansoysa92-commits.github.io/HashanSoysa/
 
 ## Core service areas
 
@@ -11,13 +15,34 @@ Luxury, responsive portfolio and services website for Hashan Soysa.
 5. Audio, Music & Live Sound
 6. Training & Professional Consultation
 
-## Built with
+## Technology
 
 - Semantic HTML5
-- Modern responsive CSS
+- Responsive CSS
 - Lightweight vanilla JavaScript
-- SEO metadata + structured data
+- Luxury motion design
+- Mobile-first layout
+- SEO metadata and Schema.org structured data
+- Open Graph and social sharing metadata
+- `robots.txt` and XML sitemap
+- Web app manifest
 - Accessibility and reduced-motion support
-- GitHub Pages deployment workflow
+- GitHub Actions → GitHub Pages deployment
 
-Live URL: https://hashansoysa92-commits.github.io/HashanSoysa/
+## GitHub-only architecture
+
+The website has no Vercel, Floot, Netlify or other hosting dependency. The production source is stored in this repository and is deployed through GitHub Pages.
+
+### Production files
+
+- `index.html` — page content, SEO and structured data
+- `assets/styles.css` — luxury responsive visual system and motion
+- `assets/script.js` — navigation, reveal and interaction behavior
+- `assets/favicon.svg` — site icon
+- `site.webmanifest` — web app metadata
+- `robots.txt` — crawler instructions
+- `sitemap.xml` — search-engine sitemap
+- `.nojekyll` — direct static asset serving
+- `.github/workflows/pages.yml` — GitHub Pages deployment
+
+Every push to `main` automatically triggers the GitHub Pages deployment workflow once Pages is enabled for this repository.
