@@ -1,37 +1,34 @@
 (() => {
   const cfg = window.HASHAN_CMS;
-  const query = new URLSearchParams(location.search);
-  const directRecoveryToken = query.get('token_hash') || query.get('token');
-  const directRecoveryType = query.get('type');
-  const recoveryFromUrl = (() => {
-    const hash = new URLSearchParams((location.hash || '').replace(/^#/, ''));
-    return hash.get('type') === 'recovery';
-  })();
-
   const client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
   window.hashanAdminClient = client;
-  const byId = id => document.getElementById(id);
-  let recoveryMode = recoveryFromUrl || (Boolean(directRecoveryToken) && directRecoveryType === 'recovery');
 
-  const status = (text, type='') => {
-    const n = byId('loginStatus');
+  const $ = id => document.getElementById(id);
+  const query = new URLSearchParams(location.search);
+  const directToken = query.get('token_hash') || query.get('token');
+  const directType = query.get('type');
+  const supportedDirectType = directType === 'recovery' || directType === 'magiclink';
+  let resetMode = Boolean(directToken && supportedDirectType);
+
+  const setStatus = (text, type = '') => {
+    const n = $('loginStatus');
     if (!n) return;
     n.textContent = text;
     n.className = 'status ' + type;
   };
 
-  async function authorized(user) {
+  async function isAuthorized(user) {
     if (!user) return false;
-    const attempts = [
+    const calls = [
       () => client.rpc('is_admin', { uid: user.id }),
       () => client.rpc('is_super_admin', { uid: user.id }),
       () => client.rpc('is_admin'),
       () => client.rpc('is_super_admin')
     ];
-    for (const attempt of attempts) {
+    for (const call of calls) {
       try {
-        const result = await attempt();
-        if (!result.error && result.data === true) return true;
+        const r = await call();
+        if (!r.error && r.data === true) return true;
       } catch (_) {}
     }
     try {
@@ -44,27 +41,30 @@
     return false;
   }
 
-  function showRecoveryForm() {
-    const login = byId('loginView');
-    const dashboard = byId('dashboard');
+  function showResetForm() {
+    const login = $('loginView');
+    const dashboard = $('dashboard');
     if (!login) return;
     login.classList.remove('off');
     dashboard?.classList.remove('on');
+
     const card = login.querySelector('.card');
-    if (!card || card.dataset.recoveryReady === '1') return;
-    card.dataset.recoveryReady = '1';
-    while (card.firstChild) card.removeChild(card.firstChild);
+    if (!card || card.dataset.resetReady === '1') return;
+    card.dataset.resetReady = '1';
+    card.replaceChildren();
 
     const eyebrow = document.createElement('p');
     eyebrow.className = 'muted';
-    eyebrow.textContent = 'PASSWORD RECOVERY';
+    eyebrow.textContent = 'SECURE PASSWORD SETUP';
+
     const title = document.createElement('h1');
-    title.textContent = 'Set New Password';
+    title.textContent = 'Set New Admin Password';
+
     const intro = document.createElement('p');
     intro.className = 'muted';
-    intro.textContent = 'Enter and confirm your new administrator password.';
-    const form = document.createElement('form');
+    intro.textContent = 'Enter a new password for your administrator account.';
 
+    const form = document.createElement('form');
     const makeField = (labelText, id) => {
       const wrap = document.createElement('div');
       wrap.className = 'field';
@@ -85,88 +85,101 @@
     button.type = 'submit';
     button.className = 'btn primary';
     button.textContent = 'Update Password';
-    const recoveryStatus = document.createElement('div');
-    recoveryStatus.className = 'status';
-    form.append(makeField('New Password', 'newAdminPassword'), makeField('Confirm Password', 'confirmAdminPassword'), button);
-    card.append(eyebrow, title, intro, form, recoveryStatus);
+
+    const result = document.createElement('div');
+    result.className = 'status';
+
+    form.append(
+      makeField('New Password', 'newAdminPassword'),
+      makeField('Confirm Password', 'confirmAdminPassword'),
+      button
+    );
+    card.append(eyebrow, title, intro, form, result);
 
     form.addEventListener('submit', async event => {
       event.preventDefault();
-      const password = byId('newAdminPassword')?.value || '';
-      const confirm = byId('confirmAdminPassword')?.value || '';
+      const password = $('newAdminPassword')?.value || '';
+      const confirm = $('confirmAdminPassword')?.value || '';
       if (password.length < 8) {
-        recoveryStatus.textContent = 'Password must be at least 8 characters.';
-        recoveryStatus.className = 'status error';
+        result.textContent = 'Password must be at least 8 characters.';
+        result.className = 'status error';
         return;
       }
       if (password !== confirm) {
-        recoveryStatus.textContent = 'Passwords do not match.';
-        recoveryStatus.className = 'status error';
+        result.textContent = 'Passwords do not match.';
+        result.className = 'status error';
         return;
       }
+
       button.disabled = true;
-      recoveryStatus.textContent = 'Updating password…';
+      result.textContent = 'Updating password…';
+      result.className = 'status';
       const { error } = await client.auth.updateUser({ password });
       if (error) {
         button.disabled = false;
-        recoveryStatus.textContent = 'Password update failed: ' + error.message;
-        recoveryStatus.className = 'status error';
+        result.textContent = 'Password update failed: ' + error.message;
+        result.className = 'status error';
         return;
       }
-      recoveryStatus.textContent = 'Password updated successfully. Returning to Admin Login…';
-      recoveryStatus.className = 'status ok';
-      recoveryMode = false;
+
       await client.auth.signOut();
-      history.replaceState({}, document.title, location.pathname);
-      setTimeout(() => location.reload(), 1200);
+      result.textContent = 'Password updated successfully. Returning to login…';
+      result.className = 'status ok';
+      setTimeout(() => location.replace('admin.html?reset=success'), 900);
     });
   }
 
-  async function verifyRecoveryToken(token) {
-    status('Verifying password recovery link…');
-    const { error } = await client.auth.verifyOtp({ token_hash: token, type: 'recovery' });
+  async function verifyToken(token, type) {
+    resetMode = true;
+    setStatus('Verifying secure sign-in link…');
+    const { data, error } = await client.auth.verifyOtp({ token_hash: token, type });
     if (error) {
-      recoveryMode = false;
-      status('Recovery link failed: ' + error.message + '. Request a new reset email and copy its link without opening it.', 'error');
+      resetMode = false;
+      history.replaceState({}, document.title, location.pathname);
+      setStatus('Secure link failed: ' + error.message, 'error');
       return false;
     }
-    recoveryMode = true;
+    if (!data?.session) {
+      resetMode = false;
+      setStatus('Secure link was accepted, but no authenticated session was created.', 'error');
+      return false;
+    }
     history.replaceState({}, document.title, location.pathname);
-    await refresh();
+    showResetForm();
     return true;
   }
 
-  function showPasteRecoveryBox() {
-    if (byId('recoveryLinkBox')) return;
-    const card = byId('loginView')?.querySelector('.card');
+  function addPasteLinkBox() {
+    if ($('recoveryLinkBox')) return;
+    const card = $('loginView')?.querySelector('.card');
     if (!card) return;
+
     const wrap = document.createElement('div');
     wrap.id = 'recoveryLinkBox';
     wrap.className = 'field';
     const label = document.createElement('label');
     label.htmlFor = 'recoveryLinkInput';
-    label.textContent = 'Paste Reset Link';
+    label.textContent = 'Paste Supabase Reset / Sign-in Link';
     const input = document.createElement('input');
     input.id = 'recoveryLinkInput';
     input.type = 'url';
-    input.placeholder = 'Paste the Reset password link from the newest email';
+    input.placeholder = 'Paste the full Supabase email link';
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'btn';
-    button.textContent = 'Verify Reset Link';
+    button.textContent = 'Verify Link';
     button.addEventListener('click', async () => {
       try {
-        const raw = input.value.trim();
-        const parsed = new URL(raw);
-        const token = parsed.searchParams.get('token') || parsed.searchParams.get('token_hash');
-        const type = parsed.searchParams.get('type');
-        if (!token || type !== 'recovery') {
-          status('That is not a valid Supabase recovery link.', 'error');
+        const url = new URL(input.value.trim());
+        const token = url.searchParams.get('token_hash') || url.searchParams.get('token');
+        const type = url.searchParams.get('type');
+        if (!token || (type !== 'recovery' && type !== 'magiclink')) {
+          setStatus('That is not a supported Supabase recovery/sign-in link.', 'error');
           return;
         }
-        await verifyRecoveryToken(token);
+        await verifyToken(token, type);
       } catch (_) {
-        status('Paste the full Reset password link from the email.', 'error');
+        setStatus('Paste the complete Supabase link from the email.', 'error');
       }
     });
     wrap.append(label, input, button);
@@ -174,93 +187,93 @@
   }
 
   async function refresh() {
+    if (resetMode) return;
     const { data: { session } } = await client.auth.getSession();
-    if (recoveryMode) {
-      if (session) showRecoveryForm();
-      else {
-        byId('loginView')?.classList.remove('off');
-        byId('dashboard')?.classList.remove('on');
-        status('Opening secure password reset session…');
-      }
-      return;
-    }
     if (!session) {
-      byId('loginView')?.classList.remove('off');
-      byId('dashboard')?.classList.remove('on');
+      $('loginView')?.classList.remove('off');
+      $('dashboard')?.classList.remove('on');
+      if (query.get('reset') === 'success') setStatus('Password updated. Sign in with your new password.', 'ok');
       return;
     }
-    if (!(await authorized(session.user))) {
+
+    if (!(await isAuthorized(session.user))) {
       const email = session.user.email || 'this account';
       await client.auth.signOut();
-      status('Authentication succeeded for ' + email + ', but this account is not authorized as an administrator.', 'error');
+      setStatus('Authentication succeeded for ' + email + ', but this account is not authorized as an administrator.', 'error');
       return;
     }
-    byId('loginView')?.classList.add('off');
-    byId('dashboard')?.classList.add('on');
-    if (byId('sessionText')) byId('sessionText').textContent = 'Signed in as ' + (session.user.email || 'Administrator');
+
+    $('loginView')?.classList.add('off');
+    $('dashboard')?.classList.add('on');
+    if ($('sessionText')) $('sessionText').textContent = 'Signed in as ' + (session.user.email || 'Administrator');
     window.dispatchEvent(new CustomEvent('hashan-admin-ready'));
   }
 
-  async function verifyDirectRecovery() {
-    if (!directRecoveryToken || directRecoveryType !== 'recovery') {
-      await refresh();
-      return;
-    }
-    await verifyRecoveryToken(directRecoveryToken);
-  }
-
-  byId('loginForm')?.addEventListener('submit', async event => {
+  $('loginForm')?.addEventListener('submit', async event => {
     event.preventDefault();
-    const email = byId('adminEmail')?.value.trim();
-    const password = byId('adminPassword')?.value || '';
+    const email = $('adminEmail')?.value.trim();
+    const password = $('adminPassword')?.value || '';
     if (!email || !password) {
-      status('Enter your email and password.', 'error');
+      setStatus('Enter your email and password.', 'error');
       return;
     }
-    const button = byId('loginBtn');
+
+    const button = $('loginBtn');
     if (button) button.disabled = true;
-    status('Signing in…');
+    setStatus('Signing in…');
     const { data, error } = await client.auth.signInWithPassword({ email, password });
     if (button) button.disabled = false;
+
     if (error) {
-      status('Login failed: ' + error.message, 'error');
+      setStatus('Login failed: ' + error.message, 'error');
       return;
     }
     if (!data?.session) {
-      status('Login failed: authenticated session was not created.', 'error');
+      setStatus('Login failed: authenticated session was not created.', 'error');
       return;
     }
-    if (byId('adminPassword')) byId('adminPassword').value = '';
-    status('Authentication successful. Checking administrator access…');
+
+    if ($('adminPassword')) $('adminPassword').value = '';
+    setStatus('Authentication successful. Checking administrator access…');
     await refresh();
   });
 
-  byId('forgotBtn')?.addEventListener('click', async () => {
-    const email = byId('adminEmail')?.value.trim();
+  $('forgotBtn')?.addEventListener('click', async () => {
+    const email = $('adminEmail')?.value.trim();
     if (!email) {
-      status('Enter your admin email first.', 'error');
+      setStatus('Enter your admin email first.', 'error');
       return;
     }
-    status('Sending password reset email…');
+
+    setStatus('Sending password reset email…');
     const redirectTo = location.origin + location.pathname;
     const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
     if (error) {
-      status('Reset failed: ' + error.message, 'error');
+      const msg = String(error.message || '');
+      if (msg.toLowerCase().includes('rate limit')) {
+        setStatus('Supabase email rate limit is active. You can paste an existing unused Reset or Sign-in link below.', 'error');
+        addPasteLinkBox();
+      } else {
+        setStatus('Reset failed: ' + msg, 'error');
+      }
       return;
     }
-    status('Reset email sent. Do not open its Reset password button. Copy the link address and paste it below.', 'ok');
-    showPasteRecoveryBox();
+    setStatus('Reset email sent. Copy the newest Supabase link and paste it below.', 'ok');
+    addPasteLinkBox();
   });
 
-  byId('logoutBtn')?.addEventListener('click', async () => {
+  $('logoutBtn')?.addEventListener('click', async () => {
     await client.auth.signOut();
     location.reload();
   });
 
-  client.auth.onAuthStateChange((event) => {
-    if (event === 'PASSWORD_RECOVERY') recoveryMode = true;
-    if (!directRecoveryToken) setTimeout(refresh, 0);
+  client.auth.onAuthStateChange(event => {
+    if (!resetMode && (event === 'SIGNED_IN' || event === 'SIGNED_OUT')) setTimeout(refresh, 0);
   });
 
-  verifyDirectRecovery();
+  if (directToken && supportedDirectType) {
+    verifyToken(directToken, directType);
+  } else {
+    refresh();
+  }
 })();
