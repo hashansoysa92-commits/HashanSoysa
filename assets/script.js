@@ -25,6 +25,26 @@
 
   document.getElementById('year').textContent = new Date().getFullYear();
 
+  // Keep the hero service chips moving around the monogram while their icon
+  // and label rotate through the main service disciplines.
+  if (!reducedMotion) {
+    const chips = [...document.querySelectorAll('.orbit-label')];
+    const highlights = [
+      ['◉', 'Photography'], ['◇', 'Video Editing'], ['↗', 'Digital Marketing'],
+      ['⌘', 'Web Development'], ['≋', 'Audio & Live Sound'], ['✦', 'Training']
+    ];
+    let highlightIndex = 0;
+    const refreshHighlights = () => chips.forEach((chip, offset) => {
+      const current = highlights[(highlightIndex + offset * 2) % highlights.length];
+      const icon = chip.querySelector('.orbit-label-icon');
+      const text = chip.querySelector('.orbit-label-text');
+      if (icon) icon.textContent = current[0];
+      if (text) text.textContent = current[1];
+    });
+    refreshHighlights();
+    window.setInterval(() => { highlightIndex = (highlightIndex + 1) % highlights.length; refreshHighlights(); }, 3200);
+  }
+
   if (!reducedMotion) {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
