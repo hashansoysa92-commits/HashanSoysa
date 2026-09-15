@@ -1,0 +1,13 @@
+{
+  "name": "Hashan Soysa — Professional Services",
+  "short_name": "Hashan Soysa",
+  "description": "Creative media, digital, web, audio, camera and professional training services.",
+  "start_url": "/HashanSoysa/",
+  "scope": "/HashanSoysa/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {"src":"assets/favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}
+  ]
+}
