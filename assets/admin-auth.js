@@ -84,7 +84,9 @@
         return data.is_active !== false && (role === 'admin' || role === 'super_admin');
       }
     } catch (_) {}
-    return false;
+    // The public client check mirrors the database RLS policy. The policy is
+    // the authority; this only decides whether to reveal the editor UI.
+    return String(user.email || '').toLowerCase() === String(cfg.adminEmail || '').toLowerCase();
   }
 
   function showResetForm() {
