@@ -67,7 +67,7 @@
     // Smoothly slow the hero motion while it is being inspected, then resume
     // from the same position when the pointer leaves.
     const heroMotion = document.querySelector('.hero-art');
-    if (heroMotion && window.matchMedia('(pointer:fine)').matches) {
+    if (heroMotion) {
       heroMotion.querySelectorAll('.orbit-glyph').forEach((glyph, index) => {
         const random = (min, max) => min + Math.random() * (max - min);
         const direction = Math.random() > .5 ? 1 : -1;
@@ -78,6 +78,7 @@
         glyph.style.setProperty('--glyph-duration', `${random(2.4, 5.8).toFixed(2)}s`);
         glyph.style.setProperty('--glyph-delay', `${(-index * random(.14, .5)).toFixed(2)}s`);
       });
+      if (window.matchMedia('(pointer:fine)').matches) {
       let motionFrame = 0;
       const animateMotion = paused => {
         cancelAnimationFrame(motionFrame);
@@ -100,6 +101,7 @@
       };
       heroMotion.addEventListener('pointerenter', () => animateMotion(true));
       heroMotion.addEventListener('pointerleave', () => animateMotion(false));
+      }
     }
   } else {
     document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
