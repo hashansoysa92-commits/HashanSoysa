@@ -63,6 +63,34 @@
       });
       button.addEventListener('pointerleave', () => { button.style.transform = ''; });
     });
+
+    // Smoothly slow the hero motion while it is being inspected, then resume
+    // from the same position when the pointer leaves.
+    const heroMotion = document.querySelector('.hero-art');
+    if (heroMotion && window.matchMedia('(pointer:fine)').matches) {
+      let motionFrame = 0;
+      const animateMotion = paused => {
+        cancelAnimationFrame(motionFrame);
+        const animations = heroMotion.getAnimations({ subtree: true });
+        if (!animations.length) return;
+        if (!paused) animations.forEach(animation => { if (animation.playState === 'paused') animation.play(); });
+        const start = performance.now();
+        const from = paused ? 1 : 0.02;
+        const to = paused ? 0 : 1;
+        const duration = paused ? 520 : 420;
+        animations.forEach(animation => { animation.playbackRate = from; });
+        const step = now => {
+          const progress = Math.min((now - start) / duration, 1);
+          const eased = progress * (2 - progress);
+          animations.forEach(animation => { animation.playbackRate = from + (to - from) * eased; });
+          if (progress < 1) motionFrame = requestAnimationFrame(step);
+          else if (paused) animations.forEach(animation => animation.pause());
+        };
+        motionFrame = requestAnimationFrame(step);
+      };
+      heroMotion.addEventListener('pointerenter', () => animateMotion(true));
+      heroMotion.addEventListener('pointerleave', () => animateMotion(false));
+    }
   } else {
     document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
   }
