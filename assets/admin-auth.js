@@ -10,6 +10,8 @@
   }
   const client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
   window.hashanAdminClient = client;
+  window.hashanAdminAuthorized = false;
+  let dashboardReady = false;
 
   const $ = id => document.getElementById(id);
   const query = new URLSearchParams(location.search);
@@ -263,6 +265,8 @@
       return;
     }
     if (!session) {
+      window.hashanAdminAuthorized = false;
+      dashboardReady = false;
       $('loginView')?.classList.remove('off');
       $('dashboard')?.classList.remove('on');
       if (query.get('reset') === 'success') setStatus('Password updated. Sign in with your new password.', 'ok');
@@ -270,6 +274,8 @@
     }
 
     if (!(await isAuthorized(session.user))) {
+      window.hashanAdminAuthorized = false;
+      dashboardReady = false;
       const email = session.user.email || 'this account';
       await client.auth.signOut();
       setStatus('Authentication succeeded for ' + email + ', but this account is not authorized as an administrator.', 'error');
@@ -279,7 +285,11 @@
     $('loginView')?.classList.add('off');
     $('dashboard')?.classList.add('on');
     if ($('sessionText')) $('sessionText').textContent = 'Signed in as ' + (session.user.email || 'Administrator');
-    window.dispatchEvent(new CustomEvent('hashan-admin-ready'));
+    window.hashanAdminAuthorized = true;
+    if (!dashboardReady) {
+      dashboardReady = true;
+      window.dispatchEvent(new CustomEvent('hashan-admin-ready'));
+    }
   }
 
   $('loginForm')?.addEventListener('submit', async event => {
