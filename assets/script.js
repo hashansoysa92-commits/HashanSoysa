@@ -108,5 +108,5 @@
   }
 
   const loadScript = src => new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.body.appendChild(s);});
-  loadScript('assets/supabase-config.js?v=20260916.5').then(()=>loadScript('assets/cms.js?v=20260916.5')).catch(()=>{});
+  loadScript('assets/supabase-config.js?v=20260916.9').then(()=>loadScript('assets/cms.js?v=20260916.9')).catch(()=>{});
 })();
