@@ -68,6 +68,16 @@
     // from the same position when the pointer leaves.
     const heroMotion = document.querySelector('.hero-art');
     if (heroMotion && window.matchMedia('(pointer:fine)').matches) {
+      heroMotion.querySelectorAll('.orbit-glyph').forEach((glyph, index) => {
+        const random = (min, max) => min + Math.random() * (max - min);
+        const direction = Math.random() > .5 ? 1 : -1;
+        glyph.style.setProperty('--glyph-x', `${random(-5, 5).toFixed(1)}px`);
+        glyph.style.setProperty('--glyph-y', `${random(-5, 5).toFixed(1)}px`);
+        glyph.style.setProperty('--glyph-rotate', `${Math.round(random(55, 210) * direction)}deg`);
+        glyph.style.setProperty('--glyph-scale', random(1.04, 1.16).toFixed(2));
+        glyph.style.setProperty('--glyph-duration', `${random(2.4, 5.8).toFixed(2)}s`);
+        glyph.style.setProperty('--glyph-delay', `${(-index * random(.14, .5)).toFixed(2)}s`);
+      });
       let motionFrame = 0;
       const animateMotion = paused => {
         cancelAnimationFrame(motionFrame);
