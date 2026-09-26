@@ -27,6 +27,14 @@
     {"number":"05","title":"Audio, Music & Live Sound","description":"Professional audio services covering recording, post-production, music creation and live event sound.","items":["Professional Audio Recording","Location Audio Recording","Audio Editing","Audio Cleanup","Audio Mixing","Video Audio Post-Production","Live Sound Engineering","FOH Sound Mixing","Live Event Audio Operation","Mixing Console Operation","Microphone & Sound System Setup","Sound Checks","Technical Audio Support","Meditation Music Creation","Background & Ambient Music Creation","Music Production"]},
     {"number":"06","title":"Training & Professional Consultation","description":"Practical training and technical consultation based on professional experience in photography, cameras, media and digital production.","items":["Photography Training","Camera Operation Training","Camera Usage Training","DSLR & Mirrorless Camera Training","Practical Photography Training","Videography Training","Lighting Setup Guidance","Camera Settings & Exposure Training","Camera Service & Maintenance Guidance","Photography & Videography Consultation","Camera & Equipment Consultation","Social Media & Digital Marketing Consultation","Website Consultation","Creative Media Consultation"]}
   ],
+  "socialPackages": {
+    "eyebrow": "Social Media Packages",
+    "title": "Choose a package\nbuilt for your brand.",
+    "intro": "Clear social media support packages, with the flexibility to tailor your content and campaign needs.",
+    "items": [
+      {"name":"Starter Content Package","description":"A flexible starting package for brands that need a polished, consistent social media presence.","price":"Contact for price"}
+    ]
+  },
   "expertise": {
     "title": "Creative thinking. Technical execution.",
     "text": "Different projects need different combinations of skills. The advantage of a multidisciplinary service is continuity — the visual direction, technical setup, post-production, digital delivery and promotion can be planned as one connected process.",
