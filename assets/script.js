@@ -25,6 +25,30 @@
 
   document.getElementById('year').textContent = new Date().getFullYear();
 
+  const dustBreeze = document.querySelector('.gold-dust-breeze');
+  if (dustBreeze && !reducedMotion) {
+    const random = (min, max) => min + Math.random() * (max - min);
+    const seedDust = (grain, initial = false) => {
+      const angle = random(0, Math.PI * 2);
+      const distance = random(90, 300);
+      grain.style.setProperty('--dust-left', `${random(-8, 108).toFixed(1)}vw`);
+      grain.style.setProperty('--dust-top', `${random(-5, 105).toFixed(1)}vh`);
+      grain.style.setProperty('--dust-x', `${(Math.cos(angle) * distance).toFixed(0)}px`);
+      grain.style.setProperty('--dust-y', `${(Math.sin(angle) * distance * .55).toFixed(0)}px`);
+      grain.style.setProperty('--dust-size', `${random(2, 6.5).toFixed(1)}px`);
+      grain.style.setProperty('--dust-opacity', random(.14, .46).toFixed(2));
+      grain.style.setProperty('--dust-duration', `${random(8, 18).toFixed(2)}s`);
+      if (initial) grain.style.setProperty('--dust-delay', `${random(-18, 0).toFixed(2)}s`);
+    };
+    const count = window.matchMedia('(max-width: 560px)').matches ? 18 : 34;
+    for (let index = 0; index < count; index += 1) {
+      const grain = document.createElement('span');
+      seedDust(grain, true);
+      grain.addEventListener('animationiteration', () => seedDust(grain));
+      dustBreeze.append(grain);
+    }
+  }
+
 
   if (!reducedMotion) {
     const observer = new IntersectionObserver((entries) => {
