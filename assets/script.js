@@ -224,4 +224,63 @@
     }).observe(mainNode,{childList:true,subtree:true});
   }
 
+  // Motion replays smoothly in both directions as elements enter and leave the viewport.
+  if (!reducedMotion) {
+    const syncMotionTargets = () => {
+      const selectors = '.section-head,.split-grid,.expertise-grid,.contact-card,.service-card,.package-card,.media-card,.process-item';
+      document.querySelectorAll(selectors).forEach((node, index) => {
+        if (!node.classList.contains('motion-flow')) {
+          node.classList.add('motion-flow');
+          node.style.setProperty('--motion-delay', `${Math.min((index % 5) * 55, 220)}ms`);
+        }
+      });
+    };
+    const bidirectionalObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => entry.target.classList.toggle('motion-in', entry.isIntersecting));
+    }, {threshold:.12,rootMargin:'0px 0px -7% 0px'});
+    const observeMotion = () => document.querySelectorAll('.motion-flow').forEach(node => bidirectionalObserver.observe(node));
+    syncMotionTargets(); observeMotion();
+    const mainContent = document.querySelector('main');
+    mainContent && new MutationObserver(() => requestAnimationFrame(() => { syncMotionTargets(); observeMotion(); }))
+      .observe(mainContent,{childList:true,subtree:true});
+  }
+
+  // Core-service details are presented in a dedicated dialog rather than expanding the card.
+  let serviceDialog;
+  const ensureServiceDialog = () => {
+    if (serviceDialog?.isConnected) return serviceDialog;
+    serviceDialog = document.createElement('dialog');
+    serviceDialog.className = 'service-dialog';
+    serviceDialog.setAttribute('aria-label', 'Service details');
+    serviceDialog.innerHTML = '<div class="service-dialog-inner"><aside class="service-dialog-side"><span class="service-dialog-no"></span><p>Core services<br>Hashan Soysa</p></aside><section class="service-dialog-main"><button class="service-dialog-close" type="button" aria-label="Close service details">×</button><h2></h2><p></p><ul class="service-dialog-list"></ul></section></div>';
+    serviceDialog.addEventListener('click', event => { if (event.target === serviceDialog) serviceDialog.close(); });
+    serviceDialog.querySelector('.service-dialog-close').addEventListener('click', () => serviceDialog.close());
+    document.body.append(serviceDialog);
+    return serviceDialog;
+  };
+  document.addEventListener('click', event => {
+    const summary = event.target.closest('.service-card summary');
+    if (!summary) return;
+    event.preventDefault();
+    const card = summary.closest('.service-card');
+    const dialog = ensureServiceDialog();
+    const number = card.querySelector('.service-no')?.textContent.trim() || '';
+    const title = card.querySelector('h3')?.textContent.trim() || 'Service details';
+    const description = card.querySelector(':scope > p')?.textContent.trim() || '';
+    dialog.querySelector('.service-dialog-no').textContent = number.padStart(2, '0');
+    dialog.querySelector('h2').textContent = title;
+    dialog.querySelector('.service-dialog-main > p').textContent = description;
+    const list = dialog.querySelector('.service-dialog-list');
+    list.replaceChildren(...Array.from(card.querySelectorAll('details li')).map(item => {
+      const entry = document.createElement('li'); entry.textContent = item.textContent.trim(); return entry;
+    }));
+    if (!dialog.open) dialog.showModal();
+  });
+  document.addEventListener('click', event => {
+    const target = event.target.closest('a,button');
+    if (!target || target.closest('.service-dialog')) return;
+    target.classList.remove('tap-feedback');
+    requestAnimationFrame(() => target.classList.add('tap-feedback'));
+  });
+
 })();
