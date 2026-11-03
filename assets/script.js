@@ -283,4 +283,23 @@
     requestAnimationFrame(() => target.classList.add('tap-feedback'));
   });
 
+  // Make service dialogs resilient to live CMS content: each core service keeps its complete approved list.
+  const completeServiceCatalog = {"Photography, Videography & Camera Services":["Professional Photography","Portrait Photography","Corporate Photography","Product & Commercial Photography","Event Photography","Passport & ID Photography","Professional Videography","Cinematography","Corporate & Promotional Video Production","Event Videography","Interviews","Social Media Video Production","Reels, Shorts & YouTube Content","Camera Operation","Lighting Setup","Visual Storytelling","Camera Rental","Photography & Videography Equipment Rental","Camera Inspection","Camera Service","Camera Repair","Camera Maintenance","Camera Testing & Troubleshooting","Camera Setup Assistance"],"Video Editing, Colour Grading & Graphic Design":["Professional Video Editing","Cinematic Video Editing","Colour Correction","Colour Grading","Audio Synchronization","Social Media Video Editing","Reels & Short-Form Video Editing","YouTube Video Editing","Promotional Video Editing","Graphic Design","Social Media Post Design","Promotional Posters","Flyers & Brochures","Digital Advertising Creatives","YouTube Thumbnails","Corporate & Promotional Graphics"],"Social Media, Digital Marketing & Meta Ads":["Social Media Marketing","Social Media Management","Facebook Content Management","Instagram Content Management","TikTok Content Creation","YouTube Content Creation","Social Media Content Planning","Digital Marketing","Brand Promotion","Meta Ads Management","Facebook Advertising","Instagram Advertising","Meta Campaign Setup","Audience Targeting","Ad Creative Planning","Campaign Monitoring","Campaign Optimization","Promotional Campaign Content","SEO-Friendly Content Creation","Social Media SEO","YouTube SEO","Caption Writing","Video Titles & Descriptions","Hashtag Research & Optimization","Creative Content Planning"],"Website Development & Digital Presence":["Website Design & Development","Business Websites","Corporate Websites","Personal Portfolio Websites","Promotional Websites","Landing Pages","Mobile-Responsive Website Design","Website UI Design","Website Content Integration","Admin-Controlled Websites","Website Updates & Maintenance","Website Deployment","GitHub Pages Websites","Social Media Integration","Google Maps & Review Integration","Basic Website SEO","SEO-Friendly Website Structure","Website Content Management"],"Audio, Music & Live Sound":["Professional Audio Recording","Location Audio Recording","Audio Editing","Audio Cleanup","Audio Mixing","Video Audio Post-Production","Live Sound Engineering","FOH Sound Mixing","Live Event Audio Operation","Mixing Console Operation","Microphone & Sound System Setup","Sound Checks","Technical Audio Support","Meditation Music Creation","Background & Ambient Music Creation","Music Production"],"Training & Professional Consultation":["Photography Training","Camera Operation Training","Camera Usage Training","DSLR & Mirrorless Camera Training","Practical Photography Training","Videography Training","Lighting Setup Guidance","Camera Settings & Exposure Training","Camera Service & Maintenance Guidance","Photography & Videography Consultation","Camera & Equipment Consultation","Social Media & Digital Marketing Consultation","Website Consultation","Creative Media Consultation"]};
+  document.addEventListener('click', event => {
+    const summary = event.target.closest('.service-card summary');
+    if (!summary) return;
+    const card = summary.closest('.service-card');
+    const dialog = ensureServiceDialog();
+    const title = card.querySelector('h3')?.textContent.trim() || 'Service details';
+    const liveItems = Array.from(card.querySelectorAll('details li')).map(item => item.textContent.trim()).filter(Boolean);
+    const fullItems = completeServiceCatalog[title] || liveItems;
+    card.querySelector('details')?.removeAttribute('open');
+    dialog.querySelector('.service-dialog-no').textContent = (card.querySelector('.service-no')?.textContent.trim() || '').padStart(2,'0');
+    dialog.querySelector('h2').textContent = title;
+    dialog.querySelector('.service-dialog-main > p').textContent = card.querySelector(':scope > p')?.textContent.trim() || '';
+    const list = dialog.querySelector('.service-dialog-list');
+    list.replaceChildren(...fullItems.map(text => { const entry = document.createElement('li'); entry.textContent = text; return entry; }));
+    if (!dialog.open) dialog.showModal();
+  });
+
 })();
