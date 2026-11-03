@@ -174,4 +174,39 @@
     window.addEventListener('scroll', revealFresh, {passive:true});
   }
 
+  // Scroll scenes: maintain the reference site's paced, editorial movement without a heavy animation library.
+  if (!reducedMotion) {
+    const sceneTargets = [
+      ['about', '01'], ['services', '02'], ['packages', '03'],
+      ['expertise', '04'], ['media', '05'], ['contact', '06']
+    ].map(([id, label]) => {
+      const node = document.getElementById(id);
+      if (!node) return null;
+      node.classList.add('scene-section');
+      node.dataset.scene = label;
+      return node;
+    }).filter(Boolean);
+
+    let sceneFrame = 0;
+    const renderScenes = () => {
+      sceneFrame = 0;
+      const center = window.innerHeight * .54;
+      sceneTargets.forEach(section => {
+        const rect = section.getBoundingClientRect();
+        const distance = Math.abs(rect.top + rect.height * .42 - center);
+        const range = Math.max(window.innerHeight * .78, rect.height * .52);
+        const p = Math.max(0, Math.min(1, 1 - distance / range));
+        section.style.setProperty('--scene-p', p.toFixed(3));
+        section.style.setProperty('--scene-y', `${((1 - p) * 52).toFixed(1)}px`);
+        section.style.setProperty('--scene-scale', (0.958 + p * .042).toFixed(3));
+        section.classList.toggle('scene-current', p > .54);
+      });
+    };
+    const queueScenes = () => { if (!sceneFrame) sceneFrame = requestAnimationFrame(renderScenes); };
+    renderScenes();
+    window.addEventListener('scroll', queueScenes, {passive:true});
+    window.addEventListener('resize', queueScenes, {passive:true});
+    new MutationObserver(queueScenes).observe(document.querySelector('main'), {childList:true, subtree:true});
+  }
+
 })();
