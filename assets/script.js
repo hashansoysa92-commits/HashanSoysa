@@ -158,4 +158,20 @@
     window.addEventListener('scroll', updateProgress, {passive:true});
   }
 
+  // CMS can replace content after initial load; make newly-rendered reveal blocks observable too.
+  if (!reducedMotion) {
+    const revealFresh = () => document.querySelectorAll('.reveal:not(.visible)').forEach((el, index) => {
+      const box = el.getBoundingClientRect();
+      if (box.top < window.innerHeight * 1.08) {
+        el.style.transitionDelay = `${Math.min((index % 4) * 70, 210)}ms`;
+        requestAnimationFrame(() => el.classList.add('visible'));
+      }
+    });
+    setTimeout(revealFresh, 900);
+    const contentHost = document.querySelector('main');
+    contentHost && new MutationObserver(() => requestAnimationFrame(revealFresh))
+      .observe(contentHost, {childList:true, subtree:true});
+    window.addEventListener('scroll', revealFresh, {passive:true});
+  }
+
 })();
