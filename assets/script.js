@@ -133,4 +133,29 @@
 
   const loadScript = src => new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.body.appendChild(s);});
   loadScript('assets/supabase-config.js?v=20260926.3').then(()=>loadScript('assets/cms.js?v=20260926.3')).catch(()=>{});
+
+  // Editorial intro and right-side reading progress.
+  if (!reducedMotion) {
+    const curtain = document.createElement('div');
+    curtain.className = 'motion-curtain';
+    curtain.setAttribute('aria-hidden', 'true');
+    curtain.innerHTML = '<span>HS</span>';
+    document.body.prepend(curtain);
+    requestAnimationFrame(() => setTimeout(() => curtain.classList.add('done'), 420));
+
+    const index = document.createElement('div');
+    index.className = 'scroll-index';
+    index.setAttribute('aria-hidden', 'true');
+    index.innerHTML = '<span></span><b>SCROLL</b>';
+    document.body.append(index);
+    const updateProgress = () => {
+      const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      const value = Math.min(100, Math.max(0, (window.scrollY / max) * 100));
+      index.style.setProperty('--scroll-progress', `${value * .42}%`);
+      index.querySelector('b').textContent = String(Math.round(value)).padStart(2, '0');
+    };
+    updateProgress();
+    window.addEventListener('scroll', updateProgress, {passive:true});
+  }
+
 })();
