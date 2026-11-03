@@ -209,4 +209,19 @@
     new MutationObserver(queueScenes).observe(document.querySelector('main'), {childList:true, subtree:true});
   }
 
+  // Rebind scroll scenes after CMS replaces live content.
+  if (!reducedMotion) {
+    const sceneIds = [['about','01'],['services','02'],['packages','03'],['expertise','04'],['media','05'],['contact','06']];
+    const applySceneBindings = () => sceneIds.forEach(([id,label]) => {
+      const node = document.getElementById(id);
+      if (node) { node.classList.add('scene-section'); node.dataset.scene = label; }
+    });
+    applySceneBindings();
+    setTimeout(applySceneBindings, 1200);
+    const mainNode = document.querySelector('main');
+    mainNode && new MutationObserver(() => {
+      requestAnimationFrame(() => { applySceneBindings(); window.dispatchEvent(new Event('scroll')); });
+    }).observe(mainNode,{childList:true,subtree:true});
+  }
+
 })();
